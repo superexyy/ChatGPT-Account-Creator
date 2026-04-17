@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Job {{ job.id[:8] }}{% endblock %}
+{% set page_name = "jobs" %}
+{% block content %}
+  <script id="job-bootstrap" type="application/json">
+    {{ {"job_id": job.id, "status": job.status, "progress_percent": progress.progress_percent} | tojson }}
+  </script>
+  <section class="hero">
+    <div>
+      <h1>{{ t("job.title", i18n.locale) }} {{ job.id[:8] }}</h1>
+      <p class="muted">{{ t("job.live.subtitle", i18n.locale) }}</p>
+    </div>
+    <div class="hero-meta">
+      <div class="kpi">
+        <div class="kpi-value" id="job-status">{{ job.status }}</div>
+        <div class="kpi-label">{{ t("job.status", i18n.locale) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="progress-percent">{{ progress.progress_percent }}%</div>
+        <div class="kpi-label">{{ t("job.progress", i18n.locale) }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-grid">
+    <div class="card">
+      <div class="toolbar" style="margin-bottom: 14px;">
+        <div>
+          <h2 style="margin: 0;">{{ t("job.live.title", i18n.locale) }}</h2>
+          <div class="muted-small">{{ t("job.live.subtitle", i18n.locale) }}</div>
+        </div>
+        <span class="badge" id="job-status-badge" data-tone="{{ job.status }}">{{ t('badge.' ~ job.status, i18n.locale, job.status) }}</span>
+      </div>
+      <div class="stack">
+        <div class="status-block">
+          <div class="muted-small">{{ t("job.account_progress", i18n.locale) }}</div>
+          <div id="account-line" style="font-size: 18px; font-weight: 800; margin-top: 4px;">{{ progress.account_line }}</div>
+        </div>
+        <div class="status-block">
+          <div class="muted-small">{{ t("job.current_email", i18n.locale) }}</div>
+          <div id="email-line" style="font-size: 18px; font-weight: 800; margin-top: 4px;">{{ progress.current_email or "-" }}</div>
+        </div>
+        <div class="status-block">
+          <div class="muted-small">{{ t("job.current_stage", i18n.locale) }}</div>
+          <div id="step-line" style="font-size: 18px; font-weight: 800; margin-top: 4px;">{{ progress.step_line }}</div>
+        </div>
+        <div class="status-block">
+          <div class="muted-small">{{ t("job.status_detail", i18n.locale) }}</div>
+          <div id="status-text" style="font-size: 16px; margin-top: 4px;">{{ progress.status_text }}</div>
+        </div>
+        <div class="progress-shell">
+          <div class="progress-head">
+            <span>{{ t("job.overall_progress", i18n.locale) }}</span>
+            <span id="progress-percent-label">{{ progress.progress_percent }}%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-bar" data-progress-percent="{{ progress.progress_percent }}" data-status="{{ job.status }}" class="progress-fill{% if job.status == 'running' %} running{% endif %}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar" style="margin-bottom: 14px;">
+        <div>
+          <h2 style="margin: 0;">{{ t("job.meta.title", i18n.locale) }}</h2>
+          <div class="muted-small">{{ t("job.meta.subtitle", i18n.locale) }}</div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="field">
+          <span class="muted-small">{{ t("job.type", i18n.locale) }}</span>
+          <strong>{{ job.type }}</strong>
+        </div>
+        <div class="field">
+          <span class="muted-small">{{ t("job.created", i18n.locale) }}</span>
+          <strong id="job-created">{{ job.createdAt | human_datetime }}</strong>
+        </div>
+        <div class="field">
+          <span class="muted-small">{{ t("job.updated", i18n.locale) }}</span>
+          <strong id="job-updated">{{ job.updatedAt | human_datetime }}</strong>
+        </div>
+        <div class="field">
+          <span class="muted-small">{{ t("job.error", i18n.locale) }}</span>
+          <strong id="job-error">{{ job.error or 'none' }}</strong>
+        </div>
+        {% if job.status not in ["deleted", "cleared"] %}
+        <form method="post" action="/backend/jobs/{{ job.id }}/delete">
+          <button type="submit" class="secondary">{{ t("job.delete", i18n.locale) }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% if job.status == "cleared" %}
+  <div class="card">
+    <div>The job file was cleared after completion.</div>
+  </div>
+  {% endif %}
+  {% if job.status == "deleted" %}
+  <div class="card">
+    <div>The job was deleted.</div>
+  </div>
+  {% endif %}
+  <section class="card">
+    <div class="toolbar" style="margin-bottom: 12px;">
+      <div>
+        <h2 style="margin: 0;">{{ t("job.result.title", i18n.locale) }}</h2>
+        <div class="muted-small">{{ t("job.result.subtitle", i18n.locale) }}</div>
+      </div>
+    </div>
+    <pre id="job-result">{{ job.result | tojson(indent=2) if job.result is not none else 'null' }}</pre>
+  </section>
+  <script defer src="{{ url_for('static', filename='js/job.js') }}"></script>
+{% endblock %}

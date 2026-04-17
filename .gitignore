@@ -1,0 +1,14 @@
+/.agents
+/.venv
+*.pyc
+
+
+/logs
+
+/.env
+
+/data
+
+/testing/.env
+/testing/mail.txt
+

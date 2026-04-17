@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Account Detail{% endblock %}
+{% set page_name = "accounts" %}
+{% block content %}
+  {% set codex_enabled = account.codex is sameas true or account.codex == true %}
+  {% set alive_enabled = account.alive is sameas true or account.alive == true %}
+  {% set verification = account.get("verification") if account is mapping else none %}
+  <section class="hero">
+    <div>
+      <h1>{{ account.email }}</h1>
+      <p class="muted">{{ account.fullName or (account.firstName ~ " " ~ account.lastName) }}</p>
+    </div>
+    <div class="hero-meta">
+      <div class="kpi">
+        <div class="kpi-value">{{ 'true' if codex_enabled else 'false' }}</div>
+        <div class="kpi-label">{{ t("accounts.codex", i18n.locale) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">{{ 'true' if alive_enabled else 'false' }}</div>
+        <div class="kpi-label">{{ t("accounts.status.alive", i18n.locale) }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar" style="margin-bottom: 14px;">
+      <div>
+        <h2 style="margin: 0;">{{ t("accounts.detail.title", i18n.locale) }}</h2>
+        <div class="muted-small">{{ t("accounts.detail.subtitle", i18n.locale) }}</div>
+      </div>
+      <div class="toolbar-group">
+        <a class="secondary" href="{{ url_for('account_list') }}">{{ t("accounts.detail.back", i18n.locale) }}</a>
+        <form id="account-verify-form" method="post" action="{{ url_for('verify_account', email=account.email) }}" style="display: inline-block; margin: 0;">
+          <input type="hidden" name="next" value="{{ url_for('account_detail', email=account.email) }}" />
+          <button type="submit" id="account-verify-button">{{ t("accounts.action.verify", i18n.locale) }}</button>
+        </form>
+        <form method="post" action="{{ url_for('delete_account_route', email=account.email) }}" style="display: inline-block; margin: 0;" data-confirm="{{ t('accounts.action.delete_confirm', i18n.locale) }}" onsubmit="return confirm(this.dataset.confirm);">
+          <button type="submit" class="secondary" style="border-color: rgba(185, 28, 28, 0.35); color: var(--danger);">{{ t("accounts.action.delete", i18n.locale) }}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><th>Email</th><td>{{ account.email }}</td></tr>
+          <tr><th>Name</th><td>{{ account.fullName or (account.firstName ~ " " ~ account.lastName) }}</td></tr>
+          <tr><th>First name</th><td>{{ account.firstName or "-" }}</td></tr>
+          <tr><th>Last name</th><td>{{ account.lastName or "-" }}</td></tr>
+          <tr><th>User ID</th><td>{{ account.userId or "-" }}</td></tr>
+          <tr><th>Account ID</th><td>{{ account.accountId or "-" }}</td></tr>
+          <tr><th>Created</th><td>{{ account.createdAt | human_datetime }}</td></tr>
+          <tr><th>Expires</th><td>{{ account.expires | human_datetime }}</td></tr>
+          <tr><th>Codex</th><td>{{ 'true' if codex_enabled else 'false' }}</td></tr>
+          <tr><th>Alive</th><td>{{ 'true' if alive_enabled else 'false' }}</td></tr>
+          <tr><th>Last verified</th><td>{{ account.lastVerifiedAt | human_datetime }}</td></tr>
+          <tr><th>Access token</th><td>{% if account.accessToken %}{{ account.accessToken[:8] }}...{{ account.accessToken[-6:] }}{% else %}-{% endif %}</td></tr>
+          <tr><th>Verification</th>
+            <td>
+              {% if verification %}
+                {% if verification.error %}
+                  {{ verification.error }}
+                {% else %}
+                  loggedIn={{ 'true' if verification.loggedIn else 'false' }},
+                  alive={{ 'true' if verification.alive else 'false' }},
+                  codexAlive={{ 'true' if verification.codexAlive else 'false' }},
+                  userId={{ verification.userId or '-' }},
+                  accountId={{ verification.accountId or '-' }},
+                  hasQuota={{ 'true' if verification.hasQuota else 'false' }}
+                  {% if verification.quotaError %}, quotaError={{ verification.quotaError }}{% endif %}
+                {% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar" style="margin-bottom: 12px;">
+      <div>
+        <h2 style="margin: 0;">검증 진행</h2>
+        <div class="muted-small">검증을 시작하면 작업 진행을 이 영역에서 확인합니다.</div>
+      </div>
+      <div class="toolbar-group">
+        <span class="badge" id="verify-status-badge" data-tone="info">idle</span>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="status-block">
+        <div class="muted-small">계정 진행</div>
+        <div id="verify-account-line" style="font-size: 18px; font-weight: 800; margin-top: 4px;">{{ account.email }}</div>
+      </div>
+      <div class="status-block">
+        <div class="muted-small">현재 이메일</div>
+        <div id="verify-email-line" style="font-size: 18px; font-weight: 800; margin-top: 4px;">{{ account.email }}</div>
+      </div>
+      <div class="status-block">
+        <div class="muted-small">현재 단계</div>
+        <div id="verify-step-line" style="font-size: 18px; font-weight: 800; margin-top: 4px;">대기 중</div>
+      </div>
+      <div class="status-block">
+        <div class="muted-small">상태 상세</div>
+        <div id="verify-status-text" style="font-size: 16px; margin-top: 4px;">검증을 시작하세요.</div>
+      </div>
+      <div class="progress-shell">
+        <div class="progress-head">
+          <span>전체 진행도</span>
+          <span id="verify-progress-label">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="verify-progress-bar" class="progress-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+      <div class="field">
+        <span class="muted-small">최근 로그</span>
+        <pre id="verify-logs" style="min-height: 180px; white-space: pre-wrap;">대기 중</pre>
+      </div>
+      <div class="field">
+        <span class="muted-small">결과</span>
+        <pre id="verify-result" style="min-height: 140px;">{{ verification | tojson(indent=2) if verification is not none else 'null' }}</pre>
+      </div>
+    </div>
+  </section>
+  <script defer src="{{ url_for('static', filename='js/account_detail.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Account Maker{% endblock %}</title>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </head>
+  <body data-page="{{ page_name | default('') }}">
+    <script>
+      window.__ui = {
+        locale: {{ i18n.locale | tojson }},
+        translations: {{ i18n.translations | tojson }},
+        fallback: {{ i18n.fallback | tojson }},
+      };
+    </script>
+    <div class="wrap">
+      <div class="shell">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="brand-kicker">Operations</div>
+            <div class="brand-title">Account Maker</div>
+          </div>
+          <div class="theme-toggle">
+            <span class="muted-small">Theme</span>
+            <button type="button" id="theme-toggle" class="secondary">Dark mode</button>
+          </div>
+          <nav class="nav">
+            <a href="/" data-nav="home">{{ t("nav.dashboard", i18n.locale) }}</a>
+            <a href="/accounts" data-nav="accounts">{{ t("nav.accounts", i18n.locale) }}</a>
+          </nav>
+        </aside>
+        <main class="content">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

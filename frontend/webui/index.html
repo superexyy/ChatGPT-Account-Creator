@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Account Maker{% endblock %}
+{% set page_name = "home" %}
+{% block content %}
+  <section class="hero">
+    <div>
+      <h1>{{ t("home.title", i18n.locale) }}</h1>
+      <p class="muted">{{ t("home.subtitle", i18n.locale) }}</p>
+    </div>
+    <div class="hero-meta">
+      <div class="kpi">
+        <div class="kpi-value" id="job-count">{{ jobs|length }}</div>
+        <div class="kpi-label">{{ t("home.jobs.tracked", i18n.locale) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="active-count">{{ jobs | selectattr("status", "equalto", "running") | list | length }}</div>
+        <div class="kpi-label">{{ t("home.jobs.active", i18n.locale) }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-grid">
+    <div class="card">
+      <h2>{{ t("home.create.title", i18n.locale) }}</h2>
+      <p class="muted-small">{{ t("home.create.subtitle", i18n.locale) }}</p>
+      <form method="post" action="/backend/jobs/create" class="stack">
+        <div class="field">
+          <label for="count">Count</label>
+          <input id="count" name="count" type="number" min="1" value="1" />
+        </div>
+        <div class="field">
+          <label for="suffix">Suffix</label>
+          <input id="suffix" name="suffix" type="text" placeholder="optional" />
+        </div>
+        <div class="toolbar">
+          <div class="muted-small">Create accounts now</div>
+          <button type="submit">{{ t("home.create.cta", i18n.locale) }}</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>{{ t("home.export.title", i18n.locale) }}</h2>
+      <p class="muted-small">{{ t("home.export.subtitle", i18n.locale) }}</p>
+      <div class="stack">
+        <div class="muted-small">{{ t("home.export.accounts_hint", i18n.locale) }}</div>
+        <form method="post" action="/backend/jobs/export" class="toolbar">
+          <input type="hidden" name="kind" value="accounts" />
+          <button type="submit">{{ t("home.export.accounts_cta", i18n.locale) }}</button>
+        </form>
+        <div class="muted-small">{{ t("home.export.email_db_hint", i18n.locale) }}</div>
+        <form method="post" action="/backend/jobs/export" class="toolbar">
+          <input type="hidden" name="kind" value="email_db" />
+          <button type="submit">{{ t("home.export.email_db_cta", i18n.locale) }}</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar" style="margin-bottom: 12px;">
+      <div>
+        <h2 style="margin: 0;">{{ t("home.jobs.title", i18n.locale) }}</h2>
+        <div class="muted-small">{{ t("home.jobs.subtitle", i18n.locale) }}</div>
+      </div>
+      <div class="toolbar-group">
+        <span class="badge" data-tone="running">{{ t("home.jobs.running_live", i18n.locale) }}</span>
+        <span class="badge" data-tone="warning">{{ t("home.jobs.newest", i18n.locale) }}</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th>Open</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-body">
+          {% for job in jobs %}
+          <tr data-status="{{ job.status }}">
+            <td>{{ job.id[:8] }}</td>
+            <td>{{ job.type }}</td>
+            <td><span class="badge" data-tone="{{ 'success' if job.status == 'completed' else 'danger' if job.status == 'failed' else 'warning' if job.status in ['deleted', 'cleared'] else 'info' }}">{{ job.status }}</span></td>
+            <td>{{ job.updatedAt | human_datetime }}</td>
+            <td><a href="/backend/jobs/{{ job.id }}">view</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <script defer src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
